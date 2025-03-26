@@ -82,10 +82,20 @@ export class CursorService {
       const windowState = data.windowsState;
       if (windowState?.lastActiveWindow?.folder) {
         const folder = windowState.lastActiveWindow.folder;
-        // 处理路径
-        const decodedPath = decodeURIComponent(folder);
-        logger.info(`找到Cursor工作区: ${decodedPath}`);
-        return decodedPath;
+        // 处理路径：移除file://前缀，确保格式统一
+        let workspacePath = decodeURIComponent(folder);
+
+        // 移除file://前缀，与VSCode路径格式保持一致
+        if (workspacePath.startsWith('file://')) {
+          workspacePath = workspacePath.replace('file://', '');
+          // 在Windows上需要额外处理
+          if (process.platform === 'win32') {
+            workspacePath = workspacePath.replace(/^\//, '');
+          }
+        }
+
+        logger.info(`找到Cursor工作区: ${workspacePath}`);
+        return workspacePath;
       }
 
       logger.error('无法从JSON中获取工作区路径');

@@ -2,17 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { Logger } from '../utils/logger';
-import initSqlJs from 'sql.js';
-import { existsSync } from 'fs';
-import { homedir } from 'os';
-import { join } from 'path';
 
 const logger = new Logger('VSCodeService');
-
-interface SQLiteRow {
-  key: string;
-  value: Uint8Array;
-}
 
 /**
  * VSCode工作空间服务
@@ -33,7 +24,9 @@ export class VSCodeService {
       if (storagePath.endsWith('.json')) {
         return this.parseJsonStorage(storagePath);
       } else if (storagePath.endsWith('.vscdb')) {
-        return await this.parseSqliteStorage(storagePath);
+        logger.debug(`检测到SQLite数据库文件，但当前环境不支持读取。尝试使用备用方法...`);
+        // 在 vscode 目录下查找文件信息
+        return await this.findWorkspaceInVSCodeFolder();
       }
 
       return null;
@@ -134,110 +127,148 @@ export class VSCodeService {
   }
 
   /**
-   * 解析SQLite格式的存储文件
+   * 从VSCode文件夹中查找工作区路径
+   * 这是一个备用方法，当无法读取SQLite数据库时使用
    */
-  private async parseSqliteStorage(dbPath: string): Promise<string | null> {
+  private async findWorkspaceInVSCodeFolder(): Promise<string | null> {
     try {
-      // 读取数据库文件
-      const fileBuffer = fs.readFileSync(dbPath);
+      const home = os.homedir();
+      let workspaceFolders: string[] = [];
 
-      // 初始化SQL.js
-      const SQL = await initSqlJs();
-
-      // 打开数据库
-      const db = new SQL.Database(new Uint8Array(fileBuffer));
-
-      // 执行查询
-      const query = `SELECT key, value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'`;
-      const result = db.exec(query);
-
-      // 关闭数据库
-      db.close();
-
-      // 检查结果
-      if (!result || result.length === 0 || !result[0].values || result[0].values.length === 0) {
-        logger.debug('[VSCodeService] No workspace history found in SQLite database');
-        return null;
+      // 根据操作系统确定VSCode工作区文件夹可能的位置
+      if (process.platform === 'darwin') {
+        workspaceFolders = [
+          path.join(home, 'Library/Application Support/Code/User/workspaceStorage'),
+          path.join(home, 'Library/Application Support/Code - Insiders/User/workspaceStorage')
+        ];
+      } else if (process.platform === 'win32') {
+        const appData = process.env.APPDATA;
+        if (appData) {
+          workspaceFolders = [
+            path.join(appData, 'Code/User/workspaceStorage')
+          ];
+        }
+      } else if (process.platform === 'linux') {
+        workspaceFolders = [
+          path.join(home, '.config/Code/User/workspaceStorage')
+        ];
       }
 
-      // 处理结果 - SQL.js返回的是二维数组，其中values[i][0]是key，values[i][1]是value
-      for (const row of result[0].values) {
-        const key = row[0] as string;
-        const value = row[1]; // 可能是Buffer或其他类型
-
-        try {
-          // 将value转换为字符串
-          let jsonStr: string;
-          if (value instanceof Uint8Array) {
-            jsonStr = new TextDecoder().decode(value);
-          } else if (Buffer.isBuffer(value)) {
-            jsonStr = value.toString('utf8');
-          } else if (typeof value === 'string') {
-            jsonStr = value;
-          } else {
-            logger.debug(`[VSCodeService] Unsupported value type: ${typeof value}`);
-            continue;
-          }
-
-          const data = JSON.parse(jsonStr);
-
-          if (!data || !Array.isArray(data.entries)) {
-            continue;
-          }
-
-          // 过滤并处理工作空间路径
-          const workspaces = data.entries
-            .filter((entry: any) => entry.folderUri && typeof entry.folderUri === 'string')
-            .map((entry: any) => {
-              let uri = entry.folderUri;
-
-              // 处理本地文件系统路径
-              if (uri.startsWith('file:///')) {
-                uri = uri.replace('file://', '');
-                // 在 Windows 上需要额外处理
-                if (process.platform === 'win32') {
-                  uri = uri.replace(/^\//, '');
-                }
-                return { path: uri, isLocal: true };
-              }
-
-              // 处理远程路径（开发容器或SSH）
-              if (uri.startsWith('vscode-remote://')) {
-                return { path: uri, isLocal: false };
-              }
-
-              return null;
-            })
-            .filter((workspace: any) => workspace !== null);
-
-          // 优先选择本地工作空间
-          const localWorkspaces = workspaces.filter((w: any) => w.isLocal);
-          if (localWorkspaces.length > 0) {
-            // 验证路径是否存在
-            for (const workspace of localWorkspaces) {
-              if (existsSync(workspace.path)) {
-                logger.debug(`[VSCodeService] Found valid local workspace: ${workspace.path}`);
-                return workspace.path;
-              }
-            }
-          }
-
-          // 如果没有有效的本地工作空间，返回第一个远程工作空间
-          const remoteWorkspaces = workspaces.filter((w: any) => !w.isLocal);
-          if (remoteWorkspaces.length > 0) {
-            logger.debug(`[VSCodeService] Found remote workspace: ${remoteWorkspaces[0].path}`);
-            return remoteWorkspaces[0].path;
-          }
-        } catch (parseError) {
-          logger.debug(`[VSCodeService] Error parsing workspace data: ${parseError}`);
+      for (const folderPath of workspaceFolders) {
+        if (!fs.existsSync(folderPath)) {
           continue;
         }
+
+        // 获取最近修改的工作区文件夹
+        const folders = fs.readdirSync(folderPath);
+        if (folders.length === 0) {
+          continue;
+        }
+
+        // 按修改时间排序，获取最近修改的
+        const sortedFolders = folders
+          .map(folder => {
+            const fullPath = path.join(folderPath, folder);
+            const stat = fs.statSync(fullPath);
+            return {
+              path: fullPath,
+              mtime: stat.mtime
+            };
+          })
+          .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
+
+        // 检查每个文件夹中的 workspace.json 
+        for (const folder of sortedFolders) {
+          const workspaceJsonPath = path.join(folder.path, 'workspace.json');
+          if (fs.existsSync(workspaceJsonPath)) {
+            try {
+              const content = fs.readFileSync(workspaceJsonPath, 'utf8');
+              const data = JSON.parse(content);
+
+              // 尝试提取工作区文件夹路径
+              if (data.folder) {
+                let workspacePath = data.folder;
+                if (workspacePath.startsWith('file://')) {
+                  workspacePath = workspacePath.replace('file://', '');
+                  // 在 Windows 上需要额外处理
+                  if (process.platform === 'win32') {
+                    workspacePath = workspacePath.replace(/^\//, '');
+                  }
+                }
+                if (fs.existsSync(workspacePath)) {
+                  logger.debug(`[VSCodeService] Found workspace from workspace.json: ${workspacePath}`);
+                  return workspacePath;
+                }
+              }
+            } catch (err) {
+              logger.debug(`解析工作区文件失败: ${workspaceJsonPath}`, err);
+            }
+          }
+        }
+      }
+
+      // 如果无法找到工作区，尝试从最近文件夹中猜测
+      const recentFolders = await this.findRecentFolders();
+      if (recentFolders.length > 0) {
+        logger.debug(`[VSCodeService] Using recent folder as workspace: ${recentFolders[0]}`);
+        return recentFolders[0];
       }
 
       return null;
     } catch (error) {
-      logger.debug(`[VSCodeService] Error reading SQLite database: ${error}`);
+      logger.error('查找工作区文件夹失败:', error);
       return null;
+    }
+  }
+
+  /**
+   * 查找最近使用的文件夹
+   */
+  private async findRecentFolders(): Promise<string[]> {
+    const home = os.homedir();
+    const folders: string[] = [];
+
+    try {
+      // 常见的项目文件夹路径
+      const commonFolders = [
+        path.join(home, 'Documents'),
+        path.join(home, 'Projects'),
+        path.join(home, 'workspace'),
+        path.join(home, 'Code')
+      ];
+
+      // 查找是否存在这些文件夹
+      for (const folder of commonFolders) {
+        if (!fs.existsSync(folder)) {
+          continue;
+        }
+
+        // 获取子文件夹
+        const items = fs.readdirSync(folder);
+        for (const item of items) {
+          const fullPath = path.join(folder, item);
+          if (fs.statSync(fullPath).isDirectory()) {
+            // 检查是否是代码项目（有.git文件夹）
+            if (fs.existsSync(path.join(fullPath, '.git'))) {
+              folders.push(fullPath);
+            }
+          }
+        }
+      }
+
+      // 按修改时间排序
+      return folders.sort((a, b) => {
+        try {
+          const statA = fs.statSync(a);
+          const statB = fs.statSync(b);
+          return statB.mtime.getTime() - statA.mtime.getTime();
+        } catch (err) {
+          return 0;
+        }
+      });
+    } catch (error) {
+      logger.error('查找最近文件夹失败:', error);
+      return [];
     }
   }
 }

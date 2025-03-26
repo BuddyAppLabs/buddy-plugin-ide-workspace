@@ -1,6 +1,6 @@
 {
   "name": "@coffic/plugin-ide-workspace",
-  "version": "1.0.3",
+  "version": "1.0.2",
   "description": "GitOK插件 - IDE工作空间信息显示",
   "main": "dist/index.js",
   "scripts": {
@@ -19,11 +19,8 @@
   ],
   "author": "Coffic",
   "license": "MIT",
-  "dependencies": {
-    "sql.js": "^1.9.0"
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@types/sql.js": "^1.4.4",
     "@types/node": "^20.11.24",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",
