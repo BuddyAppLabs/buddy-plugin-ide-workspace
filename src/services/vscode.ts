@@ -2,8 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { Logger } from '../utils/logger';
-import sqlite3 from 'sqlite3';
-import { promisify } from 'util';
+import Database from 'better-sqlite3';
+import { existsSync } from 'fs';
+import { homedir } from 'os';
+import { join } from 'path';
 
 const logger = new Logger('VSCodeService');
 
@@ -134,73 +136,78 @@ export class VSCodeService {
   /**
    * 解析SQLite格式的存储文件
    */
-  private async parseSqliteStorage(filePath: string): Promise<string | null> {
-    return new Promise((resolve, reject) => {
-      const db = new sqlite3.Database(
-        filePath,
-        sqlite3.OPEN_READONLY,
-        (err) => {
-          if (err) {
-            logger.error('打开SQLite数据库失败:', err);
-            resolve(null);
-            return;
+  private parseSqliteStorage(dbPath: string): string | null {
+    try {
+      const db = new Database(dbPath);
+      const query = `SELECT key, value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'`;
+      const rows = db.prepare(query).all() as Array<{ key: string; value: string | Buffer }>;
+      db.close();
+
+      if (!rows || rows.length === 0) {
+        logger.debug('[VSCodeService] No workspace history found in SQLite database');
+        return null;
+      }
+
+      for (const row of rows) {
+        try {
+          const data = JSON.parse(typeof row.value === 'string' ? row.value : row.value.toString('utf8'));
+          if (!data || !Array.isArray(data.entries)) {
+            continue;
           }
 
-          const query = `
-          SELECT key, value FROM ItemTable 
-          WHERE key LIKE '%workspace%' 
-             OR key LIKE '%window%'
-             OR key LIKE '%folder%'
-          ORDER BY key DESC
-        `;
+          // 过滤并处理工作空间路径
+          const workspaces = data.entries
+            .filter((entry: any) => entry.folderUri && typeof entry.folderUri === 'string')
+            .map((entry: any) => {
+              let uri = entry.folderUri;
 
-          db.all(query, [], (err, rows: SQLiteRow[]) => {
-            if (err) {
-              logger.error('查询SQLite数据库失败:', err);
-              db.close();
-              resolve(null);
-              return;
-            }
-
-            let workspacePath: string | null = null;
-
-            for (const row of rows) {
-              try {
-                const value = row.value;
-                if (!value) continue;
-
-                // 将Buffer或字符串转换为字符串
-                let jsonStr: string;
-                if (Buffer.isBuffer(value)) {
-                  jsonStr = value.toString('utf8');
-                } else {
-                  jsonStr = value;
+              // 处理本地文件系统路径
+              if (uri.startsWith('file:///')) {
+                uri = uri.replace('file://', '');
+                // 在 Windows 上需要额外处理
+                if (process.platform === 'win32') {
+                  uri = uri.replace(/^\//, '');
                 }
+                return { path: uri, isLocal: true };
+              }
 
-                const data = JSON.parse(jsonStr);
+              // 处理远程路径（开发容器或SSH）
+              if (uri.startsWith('vscode-remote://')) {
+                return { path: uri, isLocal: false };
+              }
 
-                // 检查常见的路径位置
-                if (data.folderUri) {
-                  workspacePath = data.folderUri.replace('file://', '');
-                  break;
-                }
-                if (data.workspace?.folders?.[0]?.uri) {
-                  workspacePath = data.workspace.folders[0].uri.replace(
-                    'file://',
-                    ''
-                  );
-                  break;
-                }
-              } catch (e) {
-                continue; // 忽略解析失败的项
+              return null;
+            })
+            .filter((workspace: any) => workspace !== null);
+
+          // 优先选择本地工作空间
+          const localWorkspaces = workspaces.filter((w: any) => w.isLocal);
+          if (localWorkspaces.length > 0) {
+            // 验证路径是否存在
+            for (const workspace of localWorkspaces) {
+              if (existsSync(workspace.path)) {
+                logger.debug(`[VSCodeService] Found valid local workspace: ${workspace.path}`);
+                return workspace.path;
               }
             }
+          }
 
-            db.close();
-            resolve(workspacePath ? decodeURIComponent(workspacePath) : null);
-          });
+          // 如果没有有效的本地工作空间，返回第一个远程工作空间
+          const remoteWorkspaces = workspaces.filter((w: any) => !w.isLocal);
+          if (remoteWorkspaces.length > 0) {
+            logger.debug(`[VSCodeService] Found remote workspace: ${remoteWorkspaces[0].path}`);
+            return remoteWorkspaces[0].path;
+          }
+        } catch (parseError) {
+          logger.debug(`[VSCodeService] Error parsing workspace data: ${parseError}`);
+          continue;
         }
-      );
-    });
+      }
+
+      return null;
+    } catch (error) {
+      logger.debug(`[VSCodeService] Error reading SQLite database: ${error}`);
+      return null;
+    }
   }
 }
