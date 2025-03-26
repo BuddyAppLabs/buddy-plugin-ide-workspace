@@ -2,6 +2,7 @@ import { Logger } from './utils/logger';
 import { VSCodeService } from './services/vscode';
 import { CursorService } from './services/cursor';
 import { WorkspaceCache } from './utils/workspace-cache';
+import { GitHelper } from './utils/git-helper';
 import { Action, PluginContext, ActionResult } from './types';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -77,6 +78,22 @@ const plugin = {
         description: `在文件浏览器中打开: ${workspace}`,
         icon: '🔍',
       });
+
+      // 检查是否为Git仓库，如果是，检查是否有未提交的更改
+      if (await GitHelper.isGitRepository(workspace)) {
+        // 添加Git相关动作
+        const hasChanges = await GitHelper.hasUncommittedChanges(workspace);
+        if (hasChanges) {
+          // 当前分支名称
+          const branch = await GitHelper.getCurrentBranch(workspace);
+          actions.push({
+            id: 'git_commit_push',
+            title: 'Git提交并推送',
+            description: `将未提交的更改提交并推送到${branch}分支`,
+            icon: '🚀',
+          });
+        }
+      }
     }
 
     // 如果有关键词，过滤匹配的动作
@@ -156,6 +173,23 @@ const plugin = {
 
           await execAsync(command);
           return { message: `已在文件浏览器中打开: ${workspace}` };
+        }
+
+        case 'git_commit_push': {
+          // 提交前确认是否有未提交的更改
+          const hasChanges = await GitHelper.hasUncommittedChanges(workspace);
+          if (!hasChanges) {
+            return { message: '当前没有未提交的更改' };
+          }
+
+          // 获取当前时间作为提交信息
+          const now = new Date();
+          const timestamp = now.toLocaleString('zh-CN');
+          const commitMessage = `GitOK自动提交: ${timestamp}`;
+
+          // 执行提交并推送
+          const result = await GitHelper.commitAndPush(workspace, commitMessage);
+          return { message: result };
         }
 
         default:

@@ -1,7 +1,7 @@
 {
   "name": "@coffic/plugin-ide-workspace",
-  "version": "1.0.5",
-  "description": "GitOK插件 - IDE工作空间信息显示",
+  "version": "1.1.0",
+  "description": "GitOK插件 - IDE工作空间信息显示，支持Git自动提交",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -19,11 +19,13 @@
   ],
   "author": "Coffic",
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
+    "@types/inquirer": "^9.0.7",
     "@types/node": "^20.11.24",
+    "chalk": "^4.1.2",
+    "inquirer": "^12.5.0",
     "rimraf": "^5.0.5",
-    "typescript": "^5.3.3",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }
