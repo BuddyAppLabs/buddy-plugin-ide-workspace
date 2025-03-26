@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { Logger } from '../utils/logger';
-import Database from 'better-sqlite3';
+import initSqlJs from 'sql.js';
 import { existsSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
@@ -11,7 +11,7 @@ const logger = new Logger('VSCodeService');
 
 interface SQLiteRow {
   key: string;
-  value: Buffer | string;
+  value: Uint8Array;
 }
 
 /**
@@ -33,7 +33,7 @@ export class VSCodeService {
       if (storagePath.endsWith('.json')) {
         return this.parseJsonStorage(storagePath);
       } else if (storagePath.endsWith('.vscdb')) {
-        return this.parseSqliteStorage(storagePath);
+        return await this.parseSqliteStorage(storagePath);
       }
 
       return null;
@@ -136,21 +136,51 @@ export class VSCodeService {
   /**
    * 解析SQLite格式的存储文件
    */
-  private parseSqliteStorage(dbPath: string): string | null {
+  private async parseSqliteStorage(dbPath: string): Promise<string | null> {
     try {
-      const db = new Database(dbPath);
+      // 读取数据库文件
+      const fileBuffer = fs.readFileSync(dbPath);
+
+      // 初始化SQL.js
+      const SQL = await initSqlJs();
+
+      // 打开数据库
+      const db = new SQL.Database(new Uint8Array(fileBuffer));
+
+      // 执行查询
       const query = `SELECT key, value FROM ItemTable WHERE key = 'history.recentlyOpenedPathsList'`;
-      const rows = db.prepare(query).all() as Array<{ key: string; value: string | Buffer }>;
+      const result = db.exec(query);
+
+      // 关闭数据库
       db.close();
 
-      if (!rows || rows.length === 0) {
+      // 检查结果
+      if (!result || result.length === 0 || !result[0].values || result[0].values.length === 0) {
         logger.debug('[VSCodeService] No workspace history found in SQLite database');
         return null;
       }
 
-      for (const row of rows) {
+      // 处理结果 - SQL.js返回的是二维数组，其中values[i][0]是key，values[i][1]是value
+      for (const row of result[0].values) {
+        const key = row[0] as string;
+        const value = row[1]; // 可能是Buffer或其他类型
+
         try {
-          const data = JSON.parse(typeof row.value === 'string' ? row.value : row.value.toString('utf8'));
+          // 将value转换为字符串
+          let jsonStr: string;
+          if (value instanceof Uint8Array) {
+            jsonStr = new TextDecoder().decode(value);
+          } else if (Buffer.isBuffer(value)) {
+            jsonStr = value.toString('utf8');
+          } else if (typeof value === 'string') {
+            jsonStr = value;
+          } else {
+            logger.debug(`[VSCodeService] Unsupported value type: ${typeof value}`);
+            continue;
+          }
+
+          const data = JSON.parse(jsonStr);
+
           if (!data || !Array.isArray(data.entries)) {
             continue;
           }

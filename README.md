@@ -1,6 +1,6 @@
 # IDE工作空间插件
 
-这是一个GitOK插件，用于显示当前IDE的工作空间信息。目前支持VSCode（包括VSCode Insiders和VSCodium）。
+这是一个Buddy插件，用于显示当前IDE的工作空间信息。目前支持VSCode（包括VSCode Insiders和VSCodium）。
 
 ## 功能特点
 
@@ -49,20 +49,9 @@ pnpm test
 
 ## 使用方法
 
-1. 将插件安装到GitOK的插件目录
+1. 将插件安装到Buddy的插件目录
 2. 当激活的应用是VSCode时，插件会自动显示"显示工作空间"动作
 3. 点击动作即可查看当前VSCode的工作空间路径
-
-## 配置项
-
-暂无配置项。
-
-## 未来计划
-
-- [ ] 支持更多IDE（WebStorm、IntelliJ IDEA等）
-- [ ] 支持显示多工作空间
-- [ ] 支持工作空间历史记录
-- [ ] 支持快速切换工作空间
 
 ## 许可证
 
