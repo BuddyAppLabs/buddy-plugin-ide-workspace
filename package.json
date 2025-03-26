@@ -11,11 +11,11 @@
     "test": "ts-node src/test.ts"
   },
   "keywords": [
-    "gitok",
     "plugin",
     "ide",
     "workspace",
-    "vscode"
+    "vscode",
+    "buddy-plugin"
   ],
   "author": "Coffic",
   "license": "MIT",
