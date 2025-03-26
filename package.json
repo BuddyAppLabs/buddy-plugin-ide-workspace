@@ -1,6 +1,6 @@
 {
   "name": "@coffic/plugin-ide-workspace",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "GitOK插件 - IDE工作空间信息显示",
   "main": "dist/index.js",
   "scripts": {
