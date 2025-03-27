@@ -72,6 +72,35 @@ export class CursorService {
   }
 
   /**
+   * 解析dev container路径
+   * 从vscode-remote URL中提取实际的本地路径
+   */
+  private parseDevContainerPath(containerPath: string): string | null {
+    try {
+      // 检查是否是dev container路径
+      if (containerPath.startsWith('vscode-remote://dev-container+')) {
+        // 提取base64编码的部分
+        const base64Part = containerPath.split('vscode-remote://dev-container+')[1].split('/')[0];
+
+        // 解码base64
+        const jsonStr = Buffer.from(base64Part, 'base64').toString();
+        const containerInfo = JSON.parse(jsonStr);
+
+        // 返回本地路径
+        if (containerInfo.hostPath) {
+          logger.debug(`解析dev container路径成功: ${containerInfo.hostPath}`);
+          return containerInfo.hostPath;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      logger.error('解析dev container路径失败:', error);
+      return null;
+    }
+  }
+
+  /**
    * 解析Cursor JSON格式的存储文件
    */
   private parseCursorJson(content: string): string | null {
@@ -82,7 +111,14 @@ export class CursorService {
       const windowState = data.windowsState;
       if (windowState?.lastActiveWindow?.folder) {
         const folder = windowState.lastActiveWindow.folder;
-        // 处理路径：移除file://前缀，确保格式统一
+
+        // 首先尝试解析是否为dev container路径
+        const containerPath = this.parseDevContainerPath(folder);
+        if (containerPath) {
+          return containerPath;
+        }
+
+        // 如果不是dev container路径，按常规方式处理
         let workspacePath = decodeURIComponent(folder);
 
         // 移除file://前缀，与VSCode路径格式保持一致
