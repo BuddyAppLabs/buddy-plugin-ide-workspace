@@ -122,4 +122,68 @@ export class GitHelper {
             throw new Error(`提交推送失败: ${error.message}`);
         }
     }
+
+    /**
+     * 获取变更统计摘要
+     * @param workspacePath 工作区路径
+     * @returns 变更统计摘要
+     */
+    static async getChangesSummary(workspacePath: string): Promise<string> {
+        try {
+            const { stdout: status } = await execAsync('git status --porcelain', {
+                cwd: workspacePath,
+            });
+
+            const changes = {
+                modified: 0,
+                added: 0,
+                deleted: 0,
+                renamed: 0,
+            };
+
+            status.split('\n').filter(Boolean).forEach(line => {
+                const statusCode = line.slice(0, 2).trim();
+                if (statusCode.includes('M')) changes.modified++;
+                else if (statusCode.includes('A')) changes.added++;
+                else if (statusCode.includes('D')) changes.deleted++;
+                else if (statusCode.includes('R')) changes.renamed++;
+            });
+
+            return Object.entries(changes)
+                .filter(([_, count]) => count > 0)
+                .map(([type, count]) => `${count} ${type}`)
+                .join(', ');
+        } catch (error) {
+            logger.error('获取变更统计失败:', error);
+            return '未知变更';
+        }
+    }
+
+    /**
+     * 自动提交并推送更改
+     * 包含变更检查、生成提交信息、提交和推送的完整流程
+     * @param workspacePath 工作区路径
+     * @returns 执行结果消息
+     */
+    static async autoCommitAndPush(workspacePath: string): Promise<string> {
+        try {
+            // 检查是否有未提交的更改
+            const hasChanges = await this.hasUncommittedChanges(workspacePath);
+            if (!hasChanges) {
+                return '当前没有未提交的更改';
+            }
+
+            // 获取变更摘要
+            const changeSummary = await this.getChangesSummary(workspacePath);
+
+            // 生成提交信息
+            const commitMessage = `${changeSummary}`;
+
+            // 执行提交并推送
+            return await this.commitAndPush(workspacePath, commitMessage);
+        } catch (error: any) {
+            logger.error('自动提交失败:', error);
+            throw new Error(`自动提交失败: ${error.message}`);
+        }
+    }
 } 

@@ -3,11 +3,9 @@ import { VSCodeService } from './services/vscode';
 import { CursorService } from './services/cursor';
 import { WorkspaceCache } from './utils/workspace-cache';
 import { GitHelper } from './utils/git-helper';
+import { FileSystemHelper } from './utils/file-system-helper';
 import { Action, PluginContext, ActionResult } from './types';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 
-const execAsync = promisify(exec);
 const logger = new Logger('IDE工作空间');
 const vscodeService = new VSCodeService();
 const cursorService = new CursorService();
@@ -159,36 +157,12 @@ const plugin = {
         }
 
         case 'open_in_explorer': {
-          // 根据操作系统打开文件浏览器
-          let command = '';
-          if (process.platform === 'darwin') {
-            command = `open "${workspace}"`;
-          } else if (process.platform === 'win32') {
-            command = `explorer "${workspace}"`;
-          } else if (process.platform === 'linux') {
-            command = `xdg-open "${workspace}"`;
-          } else {
-            return { message: `不支持的操作系统: ${process.platform}` };
-          }
-
-          await execAsync(command);
-          return { message: `已在文件浏览器中打开: ${workspace}` };
+          const result = await FileSystemHelper.openInExplorer(workspace);
+          return { message: result };
         }
 
         case 'git_commit_push': {
-          // 提交前确认是否有未提交的更改
-          const hasChanges = await GitHelper.hasUncommittedChanges(workspace);
-          if (!hasChanges) {
-            return { message: '当前没有未提交的更改' };
-          }
-
-          // 获取当前时间作为提交信息
-          const now = new Date();
-          const timestamp = now.toLocaleString('zh-CN');
-          const commitMessage = `GitOK自动提交: ${timestamp}`;
-
-          // 执行提交并推送
-          const result = await GitHelper.commitAndPush(workspace, commitMessage);
+          const result = await GitHelper.autoCommitAndPush(workspace);
           return { message: result };
         }
 
