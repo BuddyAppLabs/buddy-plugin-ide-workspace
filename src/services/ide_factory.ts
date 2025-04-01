@@ -2,12 +2,14 @@ import { BaseIDEService } from './base';
 import { VSCodeService } from './vscode';
 import { CursorService } from './cursor';
 import { TraeService } from './trae';
-import chalk from 'chalk';
 import { FileSystemHelper } from '../utils/file-system-helper';
 import { GitHelper } from '../utils/git-helper';
+import { Logger } from '../utils/logger';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+
+const logger = new Logger('IdeFactory');
 
 interface Workspace {
     name: string;
@@ -268,7 +270,7 @@ export class IDEServiceFactory {
      * @returns 工作空间列表
      */
     static async detectWorkspaces(): Promise<Workspace[]> {
-        console.log(chalk.cyan('\n正在检测IDE工作空间...\n'));
+        logger.info('\n正在检测IDE工作空间...\n');
         const workspaces: Workspace[] = [];
 
         // 获取所有支持的IDE服务
@@ -286,10 +288,10 @@ export class IDEServiceFactory {
                         name: ideName,
                         path: workspace
                     });
-                    console.log(chalk.green(`✅ ${ideName}工作空间: ${workspace}`));
+                    logger.info(`✅ ${ideName}工作空间: ${workspace}`);
                 }
             } catch (err: any) {
-                console.log(chalk.red(`❌ ${ideName}服务出错: ${err.message}`));
+                logger.info(`❌ ${ideName}服务出错: ${err.message}`);
             }
         }
 
