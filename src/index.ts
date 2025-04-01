@@ -1,14 +1,8 @@
 import { Logger } from './utils/logger';
-import { VSCodeService } from './services/vscode';
-import { CursorService } from './services/cursor';
-import { WorkspaceCache } from './utils/workspace-cache';
-import { GitHelper } from './utils/git-helper';
-import { FileSystemHelper } from './utils/file-system-helper';
 import { Action, PluginContext, ActionResult } from './types';
+import { IDEServiceFactory } from './services/ide_factory';
 
 const logger = new Logger('IDE工作空间');
-const vscodeService = new VSCodeService();
-const cursorService = new CursorService();
 
 /**
  * IDE工作空间插件
@@ -31,27 +25,22 @@ const plugin = {
   }: PluginContext): Promise<Action[]> {
     logger.info(`获取动作列表，关键词: "${keyword}", 应用: "${overlaidApp}"`);
 
-    // 检查是否为支持的IDE
-    const lowerApp = overlaidApp.toLowerCase();
-    const isVSCode = lowerApp.includes('code') || lowerApp.includes('vscode');
-    const isCursor = lowerApp.includes('cursor');
-
-    if (!isVSCode && !isCursor) {
+    // 检查是否为支持的IDE并创建对应的服务实例
+    const ideService = IDEServiceFactory.createService(overlaidApp);
+    if (!ideService) {
       logger.debug('不是支持的IDE，返回空列表');
       return [];
     }
 
     // 保存当前应用ID到缓存
-    await WorkspaceCache.saveCurrentApp(overlaidApp);
+    await IDEServiceFactory.saveCurrentApp(overlaidApp);
 
     // 预先获取工作空间信息
-    const workspace = await (isCursor
-      ? cursorService.getWorkspace()
-      : vscodeService.getWorkspace());
+    const workspace = await ideService.getWorkspace();
 
     // 将工作区路径缓存到文件中
     if (workspace) {
-      await WorkspaceCache.saveWorkspace(overlaidApp, workspace);
+      await IDEServiceFactory.saveWorkspace(overlaidApp, workspace);
     }
 
     const workspaceInfo = workspace
@@ -78,12 +67,12 @@ const plugin = {
       });
 
       // 检查是否为Git仓库，如果是，检查是否有未提交的更改
-      if (await GitHelper.isGitRepository(workspace)) {
+      if (await IDEServiceFactory.isGitRepository(workspace)) {
         // 添加Git相关动作
-        const hasChanges = await GitHelper.hasUncommittedChanges(workspace);
+        const hasChanges = await IDEServiceFactory.hasUncommittedChanges(workspace);
         if (hasChanges) {
           // 当前分支名称
-          const branch = await GitHelper.getCurrentBranch(workspace);
+          const branch = await IDEServiceFactory.getCurrentBranch(workspace);
           actions.push({
             id: 'git_commit_push',
             title: 'Git提交并推送',
@@ -120,27 +109,20 @@ const plugin = {
     try {
       // 从缓存中获取工作区路径
       // 不需要提供应用ID，会自动使用缓存中的当前应用ID
-      const workspace = WorkspaceCache.getWorkspace();
+      const workspace = IDEServiceFactory.getWorkspace();
 
       if (!workspace) {
-        const currentApp = WorkspaceCache.getCurrentApp();
+        const currentApp = IDEServiceFactory.getCurrentApp();
         logger.error(`无法从缓存获取工作区路径，应用ID: ${currentApp}`);
 
         if (currentApp) {
           // 尝试重新获取工作区路径
-          const isVSCode =
-            currentApp.toLowerCase().includes('code') ||
-            currentApp.toLowerCase().includes('vscode');
-          const isCursor = currentApp.toLowerCase().includes('cursor');
-
-          if (isVSCode || isCursor) {
-            const freshWorkspace = await (isCursor
-              ? cursorService.getWorkspace()
-              : vscodeService.getWorkspace());
-
+          const ideService = IDEServiceFactory.createService(currentApp);
+          if (ideService) {
+            const freshWorkspace = await ideService.getWorkspace();
             if (freshWorkspace) {
               // 重新缓存工作区路径
-              await WorkspaceCache.saveWorkspace(currentApp, freshWorkspace);
+              await IDEServiceFactory.saveWorkspace(currentApp, freshWorkspace);
 
               // 继续执行动作
               return this.executeAction(action);
@@ -157,12 +139,12 @@ const plugin = {
         }
 
         case 'open_in_explorer': {
-          const result = await FileSystemHelper.openInExplorer(workspace);
+          const result = await IDEServiceFactory.openInExplorer(workspace);
           return { message: result };
         }
 
         case 'git_commit_push': {
-          const result = await GitHelper.autoCommitAndPush(workspace);
+          const result = await IDEServiceFactory.autoCommitAndPush(workspace);
           return { message: result };
         }
 

@@ -1,14 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { BaseIDEService } from './base';
 import { Logger } from '../utils/logger';
 
-const logger = new Logger('VSCodeService');
+const logger = new Logger('CursorService');
 
 /**
  * VSCode工作空间服务
  */
-export class VSCodeService {
+export class VSCodeService extends BaseIDEService {
   /**
    * 获取VSCode的工作空间路径
    */
@@ -39,7 +40,7 @@ export class VSCodeService {
   /**
    * 查找VSCode存储文件路径
    */
-  private async findStoragePath(): Promise<string | null> {
+  async findStoragePath(): Promise<string | null> {
     const home = os.homedir();
     let possiblePaths: string[] = [];
 
