@@ -5,11 +5,6 @@
 import { IDEServiceFactory } from './services/ide_factory';
 import chalk from 'chalk';
 
-interface Workspace {
-  name: string;
-  path: string;
-}
-
 /**
  * 主函数
  */

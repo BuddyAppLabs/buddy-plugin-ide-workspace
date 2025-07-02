@@ -3,6 +3,7 @@ import path from 'path';
 import os from 'os';
 import { BaseIDEService } from './base';
 import { Logger } from '../utils/logger';
+import { IDEServiceFactory } from './ide_factory';
 
 const logger = new Logger('CursorService');
 
@@ -23,7 +24,14 @@ export class CursorService extends BaseIDEService {
 
       // 读取并解析存储文件
       const content = fs.readFileSync(storagePath, 'utf8');
-      return this.parseCursorJson(content);
+      const workspacePath = this.parseCursorJson(content);
+
+      // 使用IDEServiceFactory清理路径
+      if (workspacePath) {
+        return IDEServiceFactory.cleanWorkspacePath(workspacePath);
+      }
+
+      return null;
     } catch (error) {
       logger.error('获取Cursor工作空间失败:', error);
       return null;
@@ -80,17 +88,33 @@ export class CursorService extends BaseIDEService {
     try {
       // 检查是否是dev container路径
       if (containerPath.startsWith('vscode-remote://dev-container+')) {
-        // 提取base64编码的部分
-        const base64Part = containerPath.split('vscode-remote://dev-container+')[1].split('/')[0];
+        // 提取编码的部分
+        const encodedPart = containerPath.split('vscode-remote://dev-container+')[1].split('/')[0];
 
-        // 解码base64
-        const jsonStr = Buffer.from(base64Part, 'base64').toString();
-        const containerInfo = JSON.parse(jsonStr);
+        // URL解码
+        const jsonStr = decodeURIComponent(encodedPart);
 
-        // 返回本地路径
-        if (containerInfo.hostPath) {
-          logger.debug(`解析dev container路径成功: ${containerInfo.hostPath}`);
-          return containerInfo.hostPath;
+        try {
+          const containerInfo = JSON.parse(jsonStr);
+
+          // 返回本地路径
+          if (containerInfo.hostPath) {
+            logger.debug(`解析dev container路径成功: ${containerInfo.hostPath}`);
+            return containerInfo.hostPath;
+          }
+        } catch (jsonError) {
+          // 如果JSON解析失败，尝试使用base64解码（向后兼容）
+          try {
+            const jsonStr = Buffer.from(encodedPart, 'base64').toString();
+            const containerInfo = JSON.parse(jsonStr);
+
+            if (containerInfo.hostPath) {
+              logger.debug(`通过base64解析dev container路径成功: ${containerInfo.hostPath}`);
+              return containerInfo.hostPath;
+            }
+          } catch (base64Error) {
+            logger.error('base64解析也失败，可能格式发生了变化');
+          }
         }
       }
 

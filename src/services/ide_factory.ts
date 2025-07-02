@@ -34,19 +34,60 @@ export class IDEServiceFactory {
 
     /**
      * 清理工作区路径
-     * 去除file://前缀和URL编码
+     * 处理各种特殊格式的路径，使其变为本地文件系统路径
      */
-    private static cleanWorkspacePath(workspace: string | null): string | null {
+    public static cleanWorkspacePath(workspace: string | null): string | null {
         if (!workspace) return null;
+
+        // 处理vscode-remote开发容器路径
+        if (workspace.startsWith('vscode-remote://dev-container+')) {
+            try {
+                // 打印完整的路径进行调试
+                logger.debug(`处理开发容器路径: ${workspace}`);
+
+                // 直接解码整个URI部分(这部分是十六进制编码的字符串)
+                const containerUri = workspace.split('vscode-remote://dev-container+')[1].split('/workspaces/')[0];
+
+                // 尝试从十六进制字符串中提取hostPath
+                const hexString = containerUri;
+                let plainText = '';
+
+                // 每两个字符作为一个十六进制，转换为实际字符
+                for (let i = 0; i < hexString.length; i += 2) {
+                    const hex = hexString.substring(i, i + 2);
+                    plainText += String.fromCharCode(parseInt(hex, 16));
+                }
+
+                logger.debug(`解码后的内容: ${plainText}`);
+
+                // 从解码后的文本中提取hostPath
+                const hostPathMatch = /"hostPath":"([^"]+)"/.exec(plainText);
+                if (hostPathMatch && hostPathMatch[1]) {
+                    const hostPath = hostPathMatch[1];
+                    logger.debug(`提取到的hostPath: ${hostPath}`);
+                    return hostPath;
+                }
+            } catch (error) {
+                logger.error(`解析开发容器路径失败: ${error}`);
+            }
+        }
+
+        // 其他远程路径格式的处理可以在这里添加
+        // 例如: vscode-remote://ssh-remote+user@host/path/to/workspace
 
         // 去除file://前缀
         let cleanPath = workspace.replace(/^file:\/\//, '');
+
+        // 处理Windows路径中的主机名
+        if (process.platform === 'win32' && cleanPath.startsWith('/')) {
+            cleanPath = cleanPath.replace(/^\//, '');
+        }
 
         // 处理URL编码
         try {
             cleanPath = decodeURIComponent(cleanPath);
         } catch (e) {
-            console.error('解码工作区路径失败:', e);
+            logger.error('解码工作区路径失败:', e);
         }
 
         return cleanPath;
@@ -123,9 +164,6 @@ export class IDEServiceFactory {
                 fs.mkdirSync(this.CACHE_DIR, { recursive: true });
             }
 
-            // 清理工作区路径
-            const cleanWorkspace = this.cleanWorkspacePath(workspace);
-
             // 读取现有缓存
             let cacheData: Record<string, any> = {};
             if (fs.existsSync(this.CACHE_FILE)) {
@@ -138,7 +176,7 @@ export class IDEServiceFactory {
             }
 
             // 更新缓存
-            cacheData[appId] = cleanWorkspace;
+            cacheData[appId] = workspace;
 
             // 写入缓存文件
             fs.writeFileSync(
@@ -266,7 +304,7 @@ export class IDEServiceFactory {
     }
 
     /**
-     * 检测所有工作空间
+     * 检测所有支持的IDE的工作空间
      * @returns 工作空间列表
      */
     static async detectWorkspaces(): Promise<Workspace[]> {
@@ -283,11 +321,13 @@ export class IDEServiceFactory {
 
             try {
                 const workspace = await ideService.getWorkspace();
+
                 if (workspace) {
                     workspaces.push({
                         name: ideName,
-                        path: workspace
+                        path: workspace // IDE服务已经返回清理过的路径
                     });
+
                     logger.info(`✅ ${ideName}工作空间: ${workspace}`);
                 }
             } catch (err: any) {
