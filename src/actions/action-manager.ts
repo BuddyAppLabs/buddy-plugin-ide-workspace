@@ -3,7 +3,8 @@ import { BaseAction } from './base-action';
 import { ShowWorkspaceAction } from './show-workspace-action';
 import { OpenExplorerAction } from './open-explorer-action';
 import { GitCommitPushAction } from './git-commit-push-action';
-import { GitAICommitAction } from './git-ai-commit-action';
+import { AICommitAction } from './ai-commit-action';
+import { AICommitEnAction } from './ai-commit-en-action';
 import { Logger } from '../utils/logger';
 
 /**
@@ -27,7 +28,8 @@ export class ActionManager {
             new ShowWorkspaceAction(),
             new OpenExplorerAction(),
             new GitCommitPushAction(),
-            new GitAICommitAction(),
+            new AICommitAction(),
+            new AICommitEnAction(),
         ];
 
         this.logger.info(`已注册 ${this.actions.length} 个动作`);

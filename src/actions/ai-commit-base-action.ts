@@ -1,18 +1,25 @@
 import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
 import { BaseAction } from './base-action';
 import { IDEServiceFactory } from '../services/ide_factory';
-import { GitHelper } from '../utils/git-helper';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { COMMIT_TYPES, LANGUAGE_CONFIGS, LanguageConfig, PROMPT_TEMPLATE } from '../config/commit-types';
 
 const execAsync = promisify(exec);
 
 /**
- * AI智能Git提交和推送动作
+ * AI智能Git提交和推送动作基类
  */
-export class GitAICommitAction extends BaseAction {
-    constructor() {
-        super('AI智能Git提交');
+export class AICommitBaseAction extends BaseAction {
+    protected config: LanguageConfig;
+
+    constructor(language: string) {
+        const config = LANGUAGE_CONFIGS[language];
+        if (!config) {
+            throw new Error(`Unsupported language: ${language}`);
+        }
+        super(config.name);
+        this.config = config;
     }
 
     async getAction(workspace?: string): Promise<SuperAction | null> {
@@ -36,8 +43,8 @@ export class GitAICommitAction extends BaseAction {
         const branch = await IDEServiceFactory.getCurrentBranch(workspace);
 
         return {
-            id: 'git_ai_commit_push',
-            description: `🤖 使用AI智能生成commit message并推送到${branch}分支`,
+            id: this.config.id,
+            description: this.config.description.replace('{branch}', branch),
             icon: '🤖',
             globalId: '',
             pluginId: '',
@@ -45,7 +52,7 @@ export class GitAICommitAction extends BaseAction {
     }
 
     async execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
-        this.logger.info(`执行AI智能Git提交和推送: ${workspace}`);
+        this.logger.info(`执行AI智能Git提交和推送(${this.config.name}): ${workspace}`);
 
         try {
             // 检查是否有SuperContext
@@ -67,7 +74,7 @@ export class GitAICommitAction extends BaseAction {
 
             // 使用AI生成commit message
             const aiPrompt = this.buildAIPrompt(gitDiff);
-            this.logger.info('正在使用AI生成commit message...');
+            this.logger.info(`正在使用AI生成${this.config.name} commit message...`);
 
             const aiCommitMessage = await args.context.ai.generateText(aiPrompt);
 
@@ -98,8 +105,8 @@ export class GitAICommitAction extends BaseAction {
     }
 
     /**
- * 获取Git变更详情
- */
+     * 获取Git变更详情
+     */
     private async getGitDiffInfo(workspace: string): Promise<string | null> {
         try {
             // 获取变更状态
@@ -126,24 +133,20 @@ export class GitAICommitAction extends BaseAction {
      * 构建AI提示词
      */
     private buildAIPrompt(gitDiff: string): string {
-        return `请根据以下Git变更信息，生成一个简洁、清晰的commit message。
+        // 构建类型列表
+        const typesList = COMMIT_TYPES.map(type =>
+            `   - ${type.emoji} ${type.type}: ${type.description}`
+        ).join('\n');
 
-要求：
-1. 使用中文
-2. 不超过50个字符
-3. 采用约定式提交格式，如：feat: 、fix: 、docs: 、style: 、refactor: 、test: 、chore: 等
-4. 描述要具体且有意义
-5. 只返回commit message本身，不要其他内容
-
-Git变更信息：
-${gitDiff}
-
-Commit Message:`;
+        return PROMPT_TEMPLATE
+            .replace(/{language}/g, this.config.language)
+            .replace('{types}', typesList)
+            .replace('{diff}', gitDiff);
     }
 
     /**
- * 执行提交和推送
- */
+     * 执行提交和推送
+     */
     private async commitAndPush(workspace: string, commitMessage: string): Promise<string> {
         try {
             // 添加所有更改到暂存区
