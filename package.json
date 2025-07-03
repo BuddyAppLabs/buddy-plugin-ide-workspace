@@ -17,15 +17,15 @@
   "author": "Coffic",
   "license": "MIT",
   "devDependencies": {
-    "@types/inquirer": "^9.0.7",
-    "@types/node": "^20.11.24",
+    "@types/inquirer": "^9.0.8",
+    "@types/node": "^20.19.4",
     "chalk": "^4.1.2",
-    "inquirer": "^12.5.0",
-    "rimraf": "^5.0.5",
+    "inquirer": "^12.7.0",
+    "rimraf": "^5.0.10",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@coffic/buddy-types": "^1.0.2"
+    "@coffic/buddy-types": "^1.0.3"
   }
 }
