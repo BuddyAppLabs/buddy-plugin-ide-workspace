@@ -10,6 +10,9 @@ import { CreateDevBranchAction } from './create-dev-branch-action';
 import { CreateMainBranchAction } from './create-main-branch-action';
 import { MergeDevToMainAction } from './merge-dev-to-main-action';
 import { OpenInGitHubDesktopAction, OpenInBrowserAction, OpenInXcodeAction, OpenInTerminalAction } from './open-project-action';
+import { GitPushAction } from './git-push-action';
+import { SwitchToDevAction } from './switch-to-dev-action';
+import { SwitchToMainAction } from './switch-to-main-action';
 import { Logger } from '../utils/logger';
 
 /**
@@ -17,6 +20,7 @@ import { Logger } from '../utils/logger';
  * 负责管理所有动作的注册、获取和执行
  */
 export class ActionManager {
+    private static instance: ActionManager;
     private actions: BaseAction[] = [];
     private logger: Logger;
 
@@ -40,11 +44,14 @@ export class ActionManager {
             new CreateDevBranchAction(),
             new CreateMainBranchAction(),
             new MergeDevToMainAction(),
+            new GitPushAction(),
             // 打开项目相关动作
             new OpenInGitHubDesktopAction(),
             new OpenInBrowserAction(),
             new OpenInXcodeAction(),
             new OpenInTerminalAction(),
+            new SwitchToDevAction(),
+            new SwitchToMainAction()
         ];
 
         this.logger.info(`已注册 ${this.actions.length} 个动作`);

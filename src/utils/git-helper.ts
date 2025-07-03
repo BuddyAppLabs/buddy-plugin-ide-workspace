@@ -292,4 +292,59 @@ export class GitHelper {
       };
     }
   }
+
+  /**
+   * 推送当前分支到远程仓库
+   * @param workspacePath 工作区路径
+   * @returns 推送结果
+   */
+  static async push(workspacePath: string): Promise<string> {
+    try {
+      // 获取当前分支
+      const currentBranch = await this.getCurrentBranch(workspacePath);
+
+      // 检查是否有远程仓库
+      const remoteUrl = await this.getRemoteUrl(workspacePath);
+      if (!remoteUrl) {
+        throw new Error('未找到远程仓库');
+      }
+
+      // 推送到远程仓库
+      const { stdout: pushResult } = await execAsync(
+        `git push origin ${currentBranch}`,
+        { cwd: workspacePath }
+      );
+      logger.info('已推送到远程仓库:', pushResult);
+
+      return `已成功推送更改到${currentBranch}分支`;
+    } catch (error: any) {
+      logger.error('推送失败:', error);
+      throw new Error(`推送失败: ${error.message}`);
+    }
+  }
+
+  /**
+   * 切换到指定分支
+   * @param workspacePath 工作区路径
+   * @param branchName 目标分支名称
+   * @returns 切换结果
+   */
+  static async switchBranch(workspacePath: string, branchName: string): Promise<string> {
+    try {
+      // 检查分支是否存在
+      const exists = await this.branchExists(workspacePath, branchName);
+      if (!exists) {
+        throw new Error(`分支 ${branchName} 不存在`);
+      }
+
+      // 切换分支
+      const { stdout } = await execAsync(`git checkout ${branchName}`, { cwd: workspacePath });
+      logger.info(`已切换到分支: ${branchName}`, stdout);
+
+      return `已切换到${branchName}分支`;
+    } catch (error: any) {
+      logger.error('切换分支失败:', error);
+      throw new Error(`切换分支失败: ${error.message}`);
+    }
+  }
 }
