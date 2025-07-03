@@ -9,11 +9,14 @@ import { ShowCurrentBranchAction } from './show-current-branch-action';
 import { CreateDevBranchAction } from './create-dev-branch-action';
 import { CreateMainBranchAction } from './create-main-branch-action';
 import { MergeDevToMainAction } from './merge-dev-to-main-action';
-import { OpenInGitHubDesktopAction, OpenInBrowserAction, OpenInXcodeAction, OpenInTerminalAction } from './open-project-action';
+import { OpenInBrowserAction } from './open-in-browser-action';
+import { OpenInTerminalAction } from './open-in-terminal-action';
+import { OpenInXcodeAction } from './open-in-xcode-action';
 import { GitPushAction } from './git-push-action';
 import { SwitchToDevAction } from './switch-to-dev-action';
 import { SwitchToMainAction } from './switch-to-main-action';
 import { Logger } from '../utils/logger';
+import { OpenInGitHubDesktopAction } from './open-in-github-desktop-action';
 
 /**
  * 动作管理器
