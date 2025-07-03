@@ -5,6 +5,11 @@ import { OpenExplorerAction } from './open-explorer-action';
 import { GitCommitPushAction } from './git-commit-push-action';
 import { AICommitAction } from './ai-commit-action';
 import { AICommitEnAction } from './ai-commit-en-action';
+import { ShowCurrentBranchAction } from './show-current-branch-action';
+import { CreateDevBranchAction } from './create-dev-branch-action';
+import { CreateMainBranchAction } from './create-main-branch-action';
+import { MergeDevToMainAction } from './merge-dev-to-main-action';
+import { OpenInGitHubDesktopAction, OpenInBrowserAction, OpenInXcodeAction, OpenInTerminalAction } from './open-project-action';
 import { Logger } from '../utils/logger';
 
 /**
@@ -21,8 +26,8 @@ export class ActionManager {
     }
 
     /**
- * 注册所有动作
- */
+     * 注册所有动作
+     */
     private registerActions(): void {
         this.actions = [
             new ShowWorkspaceAction(),
@@ -30,6 +35,16 @@ export class ActionManager {
             new GitCommitPushAction(),
             new AICommitAction(),
             new AICommitEnAction(),
+            // Git相关动作
+            new ShowCurrentBranchAction(),
+            new CreateDevBranchAction(),
+            new CreateMainBranchAction(),
+            new MergeDevToMainAction(),
+            // 打开项目相关动作
+            new OpenInGitHubDesktopAction(),
+            new OpenInBrowserAction(),
+            new OpenInXcodeAction(),
+            new OpenInTerminalAction(),
         ];
 
         this.logger.info(`已注册 ${this.actions.length} 个动作`);

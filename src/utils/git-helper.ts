@@ -194,4 +194,102 @@ export class GitHelper {
       throw new Error(`自动提交失败: ${error.message}`);
     }
   }
+
+  /**
+   * 检查分支是否存在
+   * @param workspacePath 工作区路径
+   * @param branchName 分支名称
+   * @returns 分支是否存在
+   */
+  static async branchExists(workspacePath: string, branchName: string): Promise<boolean> {
+    try {
+      const { stdout } = await execAsync(`git branch --list ${branchName}`, {
+        cwd: workspacePath,
+      });
+      return stdout.trim() !== '';
+    } catch (error) {
+      logger.error(`检查分支${branchName}是否存在失败:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 创建新分支
+   * @param workspacePath 工作区路径
+   * @param branchName 分支名称
+   * @returns 创建结果
+   */
+  static async createBranch(workspacePath: string, branchName: string): Promise<string> {
+    try {
+      await execAsync(`git checkout -b ${branchName}`, {
+        cwd: workspacePath,
+      });
+      return `成功创建并切换到${branchName}分支`;
+    } catch (error: any) {
+      logger.error(`创建分支${branchName}失败:`, error);
+      throw new Error(`创建分支失败: ${error.message}`);
+    }
+  }
+
+  /**
+   * 合并分支
+   * @param workspacePath 工作区路径
+   * @param sourceBranch 源分支
+   * @param targetBranch 目标分支
+   * @returns 合并结果
+   */
+  static async mergeBranch(
+    workspacePath: string,
+    sourceBranch: string,
+    targetBranch: string
+  ): Promise<string> {
+    try {
+      // 切换到目标分支
+      await execAsync(`git checkout ${targetBranch}`, {
+        cwd: workspacePath,
+      });
+
+      // 合并源分支
+      await execAsync(`git merge ${sourceBranch}`, {
+        cwd: workspacePath,
+      });
+
+      return `成功将${sourceBranch}分支合并到${targetBranch}分支`;
+    } catch (error: any) {
+      logger.error(`合并分支失败:`, error);
+      throw new Error(`合并分支失败: ${error.message}`);
+    }
+  }
+
+  /**
+   * 获取项目类型
+   * @param workspacePath 工作区路径
+   * @returns 项目类型
+   */
+  static async getProjectType(workspacePath: string): Promise<{
+    isXcode: boolean;
+    hasGithub: boolean;
+    githubUrl: string | null;
+  }> {
+    try {
+      const isXcode = fs.existsSync(path.join(workspacePath, '*.xcodeproj')) ||
+        fs.existsSync(path.join(workspacePath, '*.xcworkspace'));
+
+      const remoteUrl = await this.getRemoteUrl(workspacePath);
+      const hasGithub = remoteUrl?.includes('github.com') ?? false;
+
+      return {
+        isXcode,
+        hasGithub,
+        githubUrl: hasGithub ? remoteUrl : null
+      };
+    } catch (error) {
+      logger.error('获取项目类型失败:', error);
+      return {
+        isXcode: false,
+        hasGithub: false,
+        githubUrl: null
+      };
+    }
+  }
 }

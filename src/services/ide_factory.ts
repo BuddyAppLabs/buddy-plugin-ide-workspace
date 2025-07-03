@@ -361,4 +361,52 @@ export class IDEServiceFactory {
 
         return null;
     }
+
+    /**
+     * 检查分支是否存在
+     * @param workspace 工作空间路径
+     * @param branchName 分支名称
+     * @returns 分支是否存在
+     */
+    static async branchExists(workspace: string, branchName: string): Promise<boolean> {
+        return GitHelper.branchExists(workspace, branchName);
+    }
+
+    /**
+     * 创建新分支
+     * @param workspace 工作空间路径
+     * @param branchName 分支名称
+     * @returns 创建结果
+     */
+    static async createBranch(workspace: string, branchName: string): Promise<string> {
+        return GitHelper.createBranch(workspace, branchName);
+    }
+
+    /**
+     * 合并分支
+     * @param workspace 工作空间路径
+     * @param sourceBranch 源分支
+     * @param targetBranch 目标分支
+     * @returns 合并结果
+     */
+    static async mergeBranch(
+        workspace: string,
+        sourceBranch: string,
+        targetBranch: string
+    ): Promise<string> {
+        return GitHelper.mergeBranch(workspace, sourceBranch, targetBranch);
+    }
+
+    /**
+     * 获取项目类型
+     * @param workspace 工作空间路径
+     * @returns 项目类型信息
+     */
+    static async getProjectType(workspace: string): Promise<{
+        isXcode: boolean;
+        hasGithub: boolean;
+        githubUrl: string | null;
+    }> {
+        return GitHelper.getProjectType(workspace);
+    }
 }
