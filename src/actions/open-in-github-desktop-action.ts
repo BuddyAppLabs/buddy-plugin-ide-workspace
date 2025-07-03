@@ -29,7 +29,7 @@ export class OpenInGitHubDesktopAction extends OpenProjectActionBase {
             await execAsync(`github .`, { cwd: workspace });
             return '已在GitHub Desktop中打开项目';
         } catch (error: any) {
-            throw new Error('打开GitHub Desktop失败，请确保已安装GitHub Desktop');
+            throw new Error('打开GitHub Desktop失败，请确保已安装GitHub Desktop' + error.message);
         }
     }
 }
