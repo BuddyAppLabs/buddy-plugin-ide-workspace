@@ -1,22 +1,23 @@
 import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
-import { BaseAction } from './base-action';
-import { ShowWorkspaceAction } from './show-workspace-action';
-import { OpenExplorerAction } from './open-explorer-action';
-import { GitCommitPushAction } from './git-commit-push-action';
-import { AICommitAction } from './ai-commit-action';
-import { AICommitEnAction } from './ai-commit-en-action';
-import { ShowCurrentBranchAction } from './show-current-branch-action';
-import { CreateDevBranchAction } from './create-dev-branch-action';
-import { CreateMainBranchAction } from './create-main-branch-action';
-import { MergeDevToMainAction } from './merge-dev-to-main-action';
-import { OpenInBrowserAction } from './open-in-browser-action';
-import { OpenInTerminalAction } from './open-in-terminal-action';
-import { OpenInXcodeAction } from './open-in-xcode-action';
-import { GitPushAction } from './git-push-action';
-import { SwitchToDevAction } from './switch-to-dev-action';
-import { SwitchToMainAction } from './switch-to-main-action';
-import { Logger } from '../utils/logger';
-import { OpenInGitHubDesktopAction } from './open-in-github-desktop-action';
+import { BaseAction } from './actions/base-action';
+import { ShowWorkspaceAction } from './actions/show-workspace-action';
+import { OpenExplorerAction } from './actions/open-explorer-action';
+import { GitCommitPushAction } from './actions/git-commit-push-action';
+import { AICommitZhAction } from './actions/ai-commit-zh';
+import { AICommitEnAction } from './actions/ai-commit-en';
+import { AICommitOnlyZhAction } from './actions/ai-commit-only-zh';
+import { ShowCurrentBranchAction } from './actions/show-current-branch-action';
+import { CreateDevBranchAction } from './actions/create-dev-branch-action';
+import { CreateMainBranchAction } from './actions/create-main-branch-action';
+import { MergeDevToMainAction } from './actions/merge-dev-to-main-action';
+import { OpenInBrowserAction } from './actions/open-in-browser-action';
+import { OpenInTerminalAction } from './actions/open-in-terminal-action';
+import { OpenInXcodeAction } from './actions/open-in-xcode-action';
+import { GitPushAction } from './actions/git-push-action';
+import { SwitchToDevAction } from './actions/switch-to-dev-action';
+import { SwitchToMainAction } from './actions/switch-to-main-action';
+import { Logger } from './utils/logger';
+import { OpenInGitHubDesktopAction } from './actions/open-in-github-desktop-action';
 
 /**
  * 动作管理器
@@ -40,8 +41,9 @@ export class ActionManager {
             new ShowWorkspaceAction(),
             new OpenExplorerAction(),
             new GitCommitPushAction(),
-            new AICommitAction(),
+            new AICommitZhAction(),
             new AICommitEnAction(),
+            new AICommitOnlyZhAction(),
             // Git相关动作
             new ShowCurrentBranchAction(),
             new CreateDevBranchAction(),

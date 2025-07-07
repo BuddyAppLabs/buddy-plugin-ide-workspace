@@ -15,7 +15,8 @@
         "resolveJsonModule": true
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "src/action-manager.ts"
     ],
     "exclude": [
         "node_modules",

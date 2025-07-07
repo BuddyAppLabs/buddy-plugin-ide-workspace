@@ -347,4 +347,33 @@ export class GitHelper {
       throw new Error(`切换分支失败: ${error.message}`);
     }
   }
+
+  /**
+   * 只提交更改，不推送
+   * @param workspacePath 工作区路径
+   * @param commitMessage 提交消息
+   * @returns 提交结果
+   */
+  static async commitOnly(
+    workspacePath: string,
+    commitMessage: string
+  ): Promise<string> {
+    try {
+      // 添加所有更改
+      await execAsync('git add -A', { cwd: workspacePath });
+      logger.info('已添加所有更改');
+
+      // 提交更改
+      const { stdout: commitResult } = await execAsync(
+        `git commit -m "${commitMessage}"`,
+        { cwd: workspacePath }
+      );
+      logger.info('已提交更改:', commitResult);
+
+      return `已成功提交更改。提交信息: ${commitMessage}`;
+    } catch (error: any) {
+      logger.error('只提交失败:', error);
+      throw new Error(`只提交失败: ${error.message}`);
+    }
+  }
 }

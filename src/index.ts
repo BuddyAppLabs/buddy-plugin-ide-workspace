@@ -1,7 +1,7 @@
 import { Logger } from './utils/logger';
 import { ExecuteActionArgs, ExecuteResult, GetActionsArgs, SuperAction, SuperPlugin } from '@coffic/buddy-types';
 import { IDEServiceFactory } from './services/ide_factory';
-import { ActionManager } from './actions';
+import { ActionManager } from './action-manager';
 
 const logger = new Logger('IDE工作空间');
 const actionManager = new ActionManager();

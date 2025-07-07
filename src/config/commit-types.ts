@@ -24,9 +24,7 @@ export const COMMIT_TYPES: CommitType[] = [
 ];
 
 export interface LanguageConfig {
-    id: string;
     name: string;
-    description: string;
     language: string;  // 输出语言：'中文' 或 'English'
 }
 
@@ -49,15 +47,11 @@ Commit Message:`;
 
 export const LANGUAGE_CONFIGS: Record<string, LanguageConfig> = {
     zh: {
-        id: 'git_ai_commit_push_cn',
         name: 'AI智能Git提交(中文)',
-        description: '🤖 使用AI智能生成中文commit message并推送到{branch}分支',
         language: '中文'
     },
     en: {
-        id: 'git_ai_commit_push_en',
         name: 'AI智能Git提交(英文)',
-        description: '🤖 使用AI智能生成英文commit message并推送到{branch}分支',
         language: 'English'
     }
 }; 

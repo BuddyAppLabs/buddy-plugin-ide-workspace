@@ -4,6 +4,7 @@ import { IDEServiceFactory } from '../services/ide_factory';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { COMMIT_TYPES, LANGUAGE_CONFIGS, LanguageConfig, PROMPT_TEMPLATE } from '../config/commit-types';
+import { GitHelper } from '../utils/git-helper';
 
 const execAsync = promisify(exec);
 
@@ -12,14 +13,20 @@ const execAsync = promisify(exec);
  */
 export class AICommitBaseAction extends BaseAction {
     protected config: LanguageConfig;
+    protected description: string;
+    protected id: string;
+    protected icon: string;
 
-    constructor(language: string) {
+    constructor(language: string, description: string, id: string, icon: string) {
         const config = LANGUAGE_CONFIGS[language];
         if (!config) {
             throw new Error(`Unsupported language: ${language}`);
         }
         super(config.name);
         this.config = config;
+        this.description = description;
+        this.id = id;
+        this.icon = icon;
     }
 
     async getAction(workspace?: string): Promise<SuperAction | null> {
@@ -43,9 +50,9 @@ export class AICommitBaseAction extends BaseAction {
         const branch = await IDEServiceFactory.getCurrentBranch(workspace);
 
         return {
-            id: this.config.id,
-            description: this.config.description.replace('{branch}', branch),
-            icon: '🤖',
+            id: this.id,
+            description: this.description.replace('{branch}', branch),
+            icon: this.icon,
             globalId: '',
             pluginId: '',
         };
@@ -132,7 +139,7 @@ export class AICommitBaseAction extends BaseAction {
     /**
      * 构建AI提示词
      */
-    private buildAIPrompt(gitDiff: string): string {
+    protected buildAIPrompt(gitDiff: string): string {
         // 构建类型列表
         const typesList = COMMIT_TYPES.map(type =>
             `   - ${type.emoji} ${type.type}: ${type.description}`
@@ -168,7 +175,15 @@ export class AICommitBaseAction extends BaseAction {
     /**
      * 获取Git差异信息
      */
-    private async getGitDiff(workspace: string): Promise<string | null> {
+    protected async getGitDiff(workspace: string): Promise<string | null> {
         return await this.getGitDiffInfo(workspace);
+    }
+
+    /**
+     * 只执行提交，不推送
+     */
+    protected async commitOnly(workspace: string, commitMessage: string): Promise<string> {
+        // 添加所有更改到暂存区并提交
+        return await GitHelper.commitOnly(workspace, commitMessage);
     }
 } 
