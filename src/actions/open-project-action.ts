@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { BaseAction } from './base-action';
 import { IDEServiceFactory } from '../services/ide_factory';
 
@@ -28,13 +28,10 @@ export abstract class OpenProjectActionBase extends BaseAction {
         return {
             id: this.getActionId(),
             description: `在${this.name}中打开`,
-            icon: this.getActionIcon(),
-            globalId: '',
-            pluginId: '',
         };
     }
 
-    async execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
+    async execute(context: SuperContext, workspace: string): Promise<ActionResult> {
         try {
             const projectType = await IDEServiceFactory.getProjectType(workspace);
             const result = await this.executeOpen(workspace, projectType);

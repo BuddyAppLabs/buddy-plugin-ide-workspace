@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { BaseAction } from './base-action';
 import { IDEServiceFactory } from '../services/ide_factory';
 
@@ -33,13 +33,10 @@ export class GitCommitPushAction extends BaseAction {
         return {
             id: 'git_commit_push',
             description: `将未提交的更改提交并推送到${branch}分支`,
-            icon: '🚀',
-            globalId: '',
-            pluginId: '',
         };
     }
 
-    async execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
+    async execute(context: SuperContext, workspace: string): Promise<ActionResult> {
         this.logger.info(`执行Git提交和推送: ${workspace}`);
 
         try {

@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { BaseAction } from './base-action';
 import { IDEServiceFactory } from '../services/ide_factory';
 import { exec } from 'child_process';
@@ -52,18 +52,15 @@ export class AICommitBaseAction extends BaseAction {
         return {
             id: this.id,
             description: this.description.replace('{branch}', branch),
-            icon: this.icon,
-            globalId: '',
-            pluginId: '',
         };
     }
 
-    async execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
+    async execute(context: SuperContext, workspace: string): Promise<ActionResult> {
         this.logger.info(`执行AI智能Git提交和推送(${this.config.name}): ${workspace}`);
 
         try {
             // 检查是否有SuperContext
-            if (!args.context?.ai?.generateText) {
+            if (!context.ai?.generateText) {
                 return {
                     success: false,
                     message: '缺少AI功能支持，无法生成智能commit message'
@@ -83,7 +80,7 @@ export class AICommitBaseAction extends BaseAction {
             const aiPrompt = this.buildAIPrompt(gitDiff);
             this.logger.info(`正在使用AI生成${this.config.name} commit message...`);
 
-            const aiCommitMessage = await args.context.ai.generateText(aiPrompt);
+            const aiCommitMessage = await context.ai.generateText(aiPrompt);
 
             if (!aiCommitMessage || aiCommitMessage.trim().length === 0) {
                 return {

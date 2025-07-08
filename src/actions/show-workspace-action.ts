@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { BaseAction } from './base-action';
 
 /**
@@ -17,13 +17,10 @@ export class ShowWorkspaceAction extends BaseAction {
         return {
             id: 'show_workspace',
             description: workspaceInfo,
-            icon: '📁',
-            globalId: '',
-            pluginId: '',
         };
     }
 
-    async execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
+    async execute(context: SuperContext, workspace: string): Promise<ActionResult> {
         this.logger.info(`显示工作空间信息: ${workspace}`);
         return {
             success: true,

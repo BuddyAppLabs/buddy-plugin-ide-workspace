@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { BaseAction } from './base-action';
 import { IDEServiceFactory } from '../services/ide_factory';
 
@@ -27,13 +27,10 @@ export class ShowCurrentBranchAction extends BaseAction {
         return {
             id: 'show_current_branch',
             description: `当前分支: ${branch}`,
-            icon: '🔖',
-            globalId: '',
-            pluginId: '',
         };
     }
 
-    async execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
+    async execute(context: SuperContext, workspace: string): Promise<ActionResult> {
         const branch = await IDEServiceFactory.getCurrentBranch(workspace);
         return {
             success: true,

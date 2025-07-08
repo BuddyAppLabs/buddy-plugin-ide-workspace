@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { BaseAction } from './base-action';
 import { IDEServiceFactory } from '../services/ide_factory';
 import { GitHelper } from '../utils/git-helper';
@@ -34,13 +34,10 @@ export abstract class CreateBranchActionBase extends BaseAction {
         return {
             id: `create_${this.branchName}_branch`,
             description: `创建${this.branchName}分支`,
-            icon: '🌿',
-            globalId: '',
-            pluginId: '',
         };
     }
 
-    async execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
+    async execute(context: SuperContext, workspace: string): Promise<ActionResult> {
         try {
             const result = await GitHelper.createBranch(workspace, this.branchName);
             return {

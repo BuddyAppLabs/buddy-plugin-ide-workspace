@@ -18,14 +18,14 @@
   "license": "MIT",
   "devDependencies": {
     "@types/inquirer": "^9.0.8",
-    "@types/node": "^20.19.4",
+    "@types/node": "^24.0.10",
     "chalk": "^4.1.2",
     "inquirer": "^12.7.0",
-    "rimraf": "^5.0.10",
+    "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@coffic/buddy-types": "^1.0.3"
+    "@coffic/buddy-it": "^1.0.0"
   }
 }

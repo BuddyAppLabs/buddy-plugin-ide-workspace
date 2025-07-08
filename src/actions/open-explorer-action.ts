@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { BaseAction } from './base-action';
 import { IDEServiceFactory } from '../services/ide_factory';
 
@@ -18,13 +18,10 @@ export class OpenExplorerAction extends BaseAction {
         return {
             id: 'open_in_explorer',
             description: `在文件浏览器中打开: ${workspace}`,
-            icon: '🔍',
-            globalId: '',
-            pluginId: '',
         };
     }
 
-    async execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
+    async execute(context: SuperContext, workspace: string): Promise<ActionResult> {
         this.logger.info(`在文件浏览器中打开: ${workspace}`);
 
         try {

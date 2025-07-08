@@ -1,4 +1,4 @@
-import { ExecuteActionArgs } from "@coffic/buddy-types";
+import { ActionResult, SuperContext } from "@coffic/buddy-it";
 import { AICommitBaseAction } from "./ai-commit-base";
 
 /**
@@ -13,10 +13,10 @@ export class AICommitOnlyZhAction extends AICommitBaseAction {
             '🤖');
     }
 
-    async execute(args: ExecuteActionArgs, workspace: string) {
+    async execute(context: SuperContext, workspace: string): Promise<ActionResult> {
         this.logger.info(`执行AI智能Git仅提交(${this.config.name}): ${workspace}`);
         try {
-            if (!args.context?.ai?.generateText) {
+            if (!context.ai?.generateText) {
                 return {
                     success: false,
                     message: '缺少AI功能支持，无法生成智能commit message'
@@ -31,7 +31,7 @@ export class AICommitOnlyZhAction extends AICommitBaseAction {
             }
             const aiPrompt = this.buildAIPrompt(gitDiff);
             this.logger.info(`正在使用AI生成${this.config.name} commit message...`);
-            const aiCommitMessage = await args.context.ai.generateText(aiPrompt);
+            const aiCommitMessage = await context.ai.generateText(aiPrompt);
             if (!aiCommitMessage || aiCommitMessage.trim().length === 0) {
                 return {
                     success: false,

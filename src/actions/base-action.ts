@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { Logger } from '../utils/logger';
 
 /**
@@ -25,7 +25,7 @@ export abstract class BaseAction {
      * @param workspace 工作空间路径
      * @returns 执行结果
      */
-    abstract execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult>;
+    abstract execute(context: SuperContext, workspace: string): Promise<ActionResult>;
 
     /**
      * 检查动作是否匹配关键词

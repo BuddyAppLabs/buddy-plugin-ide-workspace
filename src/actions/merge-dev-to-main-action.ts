@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { BaseAction } from './base-action';
 import { GitHelper } from '../utils/git-helper';
 
@@ -36,13 +36,10 @@ export class MergeDevToMainAction extends BaseAction {
         return {
             id: 'merge_dev_to_main',
             description: '将dev分支合并到main分支',
-            icon: '🔄',
-            globalId: '',
-            pluginId: '',
         };
     }
 
-    async execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
+    async execute(context: SuperContext, workspace: string): Promise<ActionResult> {
         try {
             // 执行合并（mergeBranch方法会自动切换到目标分支）
             const result = await GitHelper.mergeBranch(workspace, 'dev', 'main');

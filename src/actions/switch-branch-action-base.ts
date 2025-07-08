@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { BaseAction } from './base-action';
 import { GitHelper } from '../utils/git-helper';
 
@@ -39,13 +39,10 @@ export abstract class SwitchBranchActionBase extends BaseAction {
         return {
             id: this.getActionId(),
             description: `切换到${this.branchName}分支`,
-            icon: '🔄',
-            globalId: '',
-            pluginId: ''
         };
     }
 
-    async execute(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
+    async execute(context: SuperContext, workspace: string): Promise<ActionResult> {
         try {
             const result = await GitHelper.switchBranch(workspace, this.branchName);
             return {

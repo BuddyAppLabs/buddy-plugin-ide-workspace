@@ -1,4 +1,4 @@
-import { SuperAction, ExecuteActionArgs, ExecuteResult } from '@coffic/buddy-types';
+import { ActionResult, SuperAction, SuperContext } from '@coffic/buddy-it';
 import { BaseAction } from './actions/base-action';
 import { ShowWorkspaceAction } from './actions/show-workspace-action';
 import { OpenExplorerAction } from './actions/open-explorer-action';
@@ -92,20 +92,20 @@ export class ActionManager {
      * @param workspace 工作空间路径
      * @returns 执行结果
      */
-    async executeAction(args: ExecuteActionArgs, workspace: string): Promise<ExecuteResult> {
+    async executeAction(context: SuperContext, workspace: string): Promise<ActionResult> {
         // 查找对应的动作
         for (const action of this.actions) {
             const actionDef = await action.getAction(workspace);
-            if (actionDef && actionDef.id === args.actionId) {
-                return await action.execute(args, workspace);
+            if (actionDef && actionDef.id === context.actionId) {
+                return await action.execute(context, workspace);
             }
         }
 
         // 未找到对应的动作
-        this.logger.error(`未找到动作: ${args.actionId}`);
+        this.logger.error(`未找到动作: ${context.actionId}`);
         return {
             success: false,
-            message: `未知的动作: ${args.actionId}`
+            message: `未知的动作: ${context.actionId}`
         };
     }
 
