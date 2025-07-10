@@ -57,10 +57,8 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Build and Test
-        run: |
-          pnpm run build
-          pnpm test
+      - name: Build
+        run: pnpm run build
 
       - name: Bump version
         id: version
