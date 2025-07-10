@@ -150,13 +150,19 @@ export class AICommitBaseAction extends BaseAction {
             let result: string;
             if (this.actionType === 'commit') {
                 result = await this.commitOnly(workspace, aiCommitMessage);
+
+                return {
+                    success: true,
+                    message: `🎉 AI智能提交成功！`
+                };
             } else {
                 result = await this.commitAndPush(workspace, aiCommitMessage);
+
+                return {
+                    success: true,
+                    message: `🎉 AI智能提交并推送成功！`
+                };
             }
-            return {
-                success: true,
-                message: `AI智能提交成功！`
-            };
         } catch (error: any) {
             this.logger.error('AI智能Git提交动作失败:', error);
             return {
