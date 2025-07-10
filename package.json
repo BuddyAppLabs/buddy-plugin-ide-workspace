@@ -26,6 +26,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@coffic/buddy-it": "^1.0.0"
+    "@coffic/buddy-it": "^1.0.0",
+    "commander": "^14.0.0"
   }
 }

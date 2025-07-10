@@ -9,6 +9,8 @@ export class AICommitEnAction extends AICommitBaseAction {
             'en',
             '使用AI智能生成英文commit message并推送到{branch}分支',
             'git_ai_commit_push_en',
-            '🤖');
+            '🤖',
+            'commitAndPush'
+        );
     }
 } 
