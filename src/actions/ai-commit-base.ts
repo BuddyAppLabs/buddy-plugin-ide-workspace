@@ -134,7 +134,7 @@ export class AICommitBaseAction extends BaseAction {
             }
 
             // 使用AI生成commit message
-            const aiPrompt = this.buildAIPrompt(gitDiff);
+            const aiPrompt = await this.buildAIPrompt(gitDiff, workspace);
             this.logger.info(`正在使用AI生成${this.config.name} commit message...`);
 
             let aiCommitMessage = await context.ai.generateText(aiPrompt);
@@ -198,13 +198,28 @@ export class AICommitBaseAction extends BaseAction {
     }
 
     /**
+     * 检查仓库是否已有提交
+     */
+    private async hasCommits(workspace: string): Promise<boolean> {
+        try {
+            await execAsync('git rev-parse HEAD', { cwd: workspace });
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /**
      * 构建AI提示词
      */
-    protected buildAIPrompt(gitDiff: string): string {
-        // 构建类型列表
-        const typesList = COMMIT_TYPES.map(type =>
-            `   - ${type.type}: ${type.description}`
-        ).join('\n');
+    protected async buildAIPrompt(gitDiff: string, workspace: string): Promise<string> {
+        // 检查是否已有提交
+        const hasCommits = await this.hasCommits(workspace);
+        // 构建类型列表，已有提交则过滤 FirstCommit
+        const typesList = (hasCommits
+            ? COMMIT_TYPES.filter(type => type.type !== 'FirstCommit')
+            : COMMIT_TYPES
+        ).map(type => `   - ${type.type}: ${type.description}`).join('\n');
 
         return PROMPT_TEMPLATE
             .replace(/{language}/g, this.config.language)
@@ -266,4 +281,4 @@ export class AICommitBaseAction extends BaseAction {
             `${found.emoji} $1`
         );
     }
-} 
+}
