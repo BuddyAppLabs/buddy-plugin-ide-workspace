@@ -3,6 +3,7 @@ import { VSCodeService } from './vscode';
 import { CursorService } from './cursor';
 import { TraeService } from './trae';
 import { KiroService } from './kiro';
+import { QoderService } from './qoder';
 import { FileSystemHelper } from '../utils/file-system-helper';
 import { GitHelper } from '../utils/git-helper';
 import { Logger } from '../utils/logger';
@@ -313,7 +314,7 @@ export class IDEServiceFactory {
         const workspaces: Workspace[] = [];
 
         // 获取所有支持的IDE服务
-        const supportedIDEs = ['VSCode', 'Cursor', 'Trae', 'Kiro'];
+        const supportedIDEs = ['VSCode', 'Cursor', 'Trae', 'Kiro', 'Qoder'];
 
         // 遍历检测每个IDE的工作空间
         for (const ideName of supportedIDEs) {
@@ -362,6 +363,10 @@ export class IDEServiceFactory {
 
         if (lowerAppId.includes('kiro')) {
             return new KiroService('KiroService');
+        }
+
+        if (lowerAppId.includes('qoder')) {
+            return new QoderService('QoderService');
         }
 
         return null;
