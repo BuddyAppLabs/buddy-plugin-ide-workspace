@@ -18,6 +18,7 @@ import { SwitchToDevAction } from './actions/switch-to-dev-action';
 import { SwitchToMainAction } from './actions/switch-to-main-action';
 import { Logger } from './utils/logger';
 import { OpenInGitHubDesktopAction } from './actions/open-in-github-desktop-action';
+import { ShowCurrentAppAction } from './actions/show-current-app-action';
 
 /**
  * 动作管理器
@@ -39,6 +40,7 @@ export class ActionManager {
     private registerActions(): void {
         this.actions = [
             new ShowWorkspaceAction(),
+            new ShowCurrentAppAction(),
             new OpenExplorerAction(),
             new GitCommitPushAction(),
             new AICommitZhAction(),
