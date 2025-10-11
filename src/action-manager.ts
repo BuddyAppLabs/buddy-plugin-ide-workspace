@@ -6,6 +6,7 @@ import { GitCommitPushAction } from './actions/git-commit-push-action';
 import { AICommitZhAction } from './actions/ai-commit-zh';
 import { AICommitEnAction } from './actions/ai-commit-en';
 import { AICommitOnlyZhAction } from './actions/ai-commit-only-zh';
+import { AICommitOnlyEnAction } from './actions/ai-commit-only-en';
 import { ShowCurrentBranchAction } from './actions/show-current-branch-action';
 import { CreateDevBranchAction } from './actions/create-dev-branch-action';
 import { CreateMainBranchAction } from './actions/create-main-branch-action';
@@ -46,6 +47,7 @@ export class ActionManager {
             new AICommitZhAction(),
             new AICommitEnAction(),
             new AICommitOnlyZhAction(),
+            new AICommitOnlyEnAction(),
             // Git相关动作
             new ShowCurrentBranchAction(),
             new CreateDevBranchAction(),
