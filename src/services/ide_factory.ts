@@ -4,6 +4,7 @@ import { CursorService } from './cursor';
 import { TraeService } from './trae';
 import { KiroService } from './kiro';
 import { QoderService } from './qoder';
+import { AntigravityService } from './antigravity';
 import { FileSystemHelper } from '../utils/file-system-helper';
 import { GitHelper } from '../utils/git-helper';
 import { Logger } from '../utils/logger';
@@ -314,7 +315,7 @@ export class IDEServiceFactory {
         const workspaces: Workspace[] = [];
 
         // 获取所有支持的IDE服务
-        const supportedIDEs = ['VSCode', 'Cursor', 'Trae', 'Kiro', 'Qoder'];
+        const supportedIDEs = ['VSCode', 'Cursor', 'Trae', 'Kiro', 'Qoder', 'Antigravity'];
 
         // 遍历检测每个IDE的工作空间
         for (const ideName of supportedIDEs) {
@@ -367,6 +368,10 @@ export class IDEServiceFactory {
 
         if (lowerAppId.includes('qoder')) {
             return new QoderService('QoderService');
+        }
+
+        if (lowerAppId.includes('antigravity')) {
+            return new AntigravityService('AntigravityService');
         }
 
         return null;
